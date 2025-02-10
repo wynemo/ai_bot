@@ -1,0 +1,9 @@
+version: "3.8"
+
+services:
+  bot:
+    build: .
+    container_name: zhangxiaolong-bot
+    restart: unless-stopped
+    env_file:
+      - ./settings.env
