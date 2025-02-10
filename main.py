@@ -58,9 +58,9 @@ async def handle_mention(update: Update, context: ContextTypes.DEFAULT_TYPE):
                         break
         # 这里可以调用你的 API
         async with httpx.AsyncClient(timeout=180) as client:
-            url = settings.API_URL
+            url = f'{settings.API_URL}/chat/completions'
             # url = 'https://api.siliconflow.cn/v1/chat/completions'
-            await update.message.reply_text(f"using {url}")
+            print(f"using {url} {settings.MODEL_NAME}")
             headers = {
                 'authorization': f'Bearer {settings.API_SECRET}'
             }
