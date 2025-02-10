@@ -1,6 +1,7 @@
 # 兼容 openai api 的机器人
 
 一个基于 Telegram 的智能机器人，集成了对话、网页内容获取和搜索功能。
+支持使用ollama，openai兼容的API
 
 ## 特点
 
@@ -14,11 +15,13 @@
 ## 使用
 
 - 在电报 @BotFather 那里创建一个机器人
+- 获取到token后，保存，后续将`BOT_TOKEN`内容设置为它。
 - 加入search与fetch两个命令：
 ```
 search - 通过网络搜索, search by web
 fetch - 获取网页信息
 ```
+
 
 ### 配置文件
 
