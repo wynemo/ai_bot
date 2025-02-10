@@ -13,9 +13,16 @@
 
 ## 使用
 
+- 在电报 @BotFather 那里创建一个机器人
+- 加入search与fetch两个命令：
+```
+search - 通过网络搜索, search by web
+fetch - 获取网页信息
+```
+
 ### 配置文件
 
-在项目根目录创建 `settings.env`:
+`settings.env`中填写环境变量:
 
 ```env
 BOT_TOKEN=你的Telegram Bot Token
@@ -29,10 +36,12 @@ MODEL_NAME=模型名称
 1. 直接运行:
 
 ```bash
+# 设置环境变量 API_SECRET API_URL 等
+pip install -r requirements.txt
 python main.py
 ```
 
-2. Docker 运行:
+2. Docker compose 运行:
 
 ```bash
 docker-compose up -d
@@ -43,7 +52,7 @@ docker-compose up -d
 - `/start` - 获取使用说明
 - `/search [关键词]` - 搜索内容
 - `/fetch [URL]` - 获取网页内容
-- 直接 @ 机器人 - 进行对话
+- 群聊里 直接 @ 机器人 - 进行对话
 
 ## 依赖
 
