@@ -31,6 +31,7 @@ async def handle_mention(update: Update, context: ContextTypes.DEFAULT_TYPE):
     ):
         ddgs_gen = None
         response_text = None
+        refs = None
         if update.message.text.startswith('/search'):
             with DDGS() as ddgs:
                 # 使用DuckDuckGo搜索关键词
@@ -41,6 +42,7 @@ async def handle_mention(update: Update, context: ContextTypes.DEFAULT_TYPE):
                     await update.message.reply_text("请输入搜索关键词")
                     return
                 ddgs_gen = ddgs.text(key_words, safesearch='Off', timelimit='y', backend="lite", max_results=20)
+                refs = map(lambda x: (x["title"], x["href"],), ddgs_gen)
         elif update.message.text.startswith('/fetch'):
             urls = re.findall('http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\\(\\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+', update.message.text)
             # 检查消息中是否包含 http 链接
@@ -120,6 +122,12 @@ async def handle_mention(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
                 if current_message:
                     await update.message.reply_text(current_message)
+
+            if refs:
+                links_message = "相关链接:\n"
+                for title, href in refs:
+                    links_message += f"{title}: {href}\n"
+                await update.message.reply_text(links_message)
 
 def main():
     # 创建应用
