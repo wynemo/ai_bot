@@ -64,3 +64,6 @@ docker-compose up -d
 - duckduckgo-search
 - httpx
 - python-telegram-bot
+
+## 视频讲解
+[![视频讲解](https://img.youtube.com/vi/E5CH3p9w8UU/0.jpg)](https://www.youtube.com/watch?v=E5CH3p9w8UU)
