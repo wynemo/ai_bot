@@ -120,14 +120,28 @@ async def handle_mention(update: Update, context: ContextTypes.DEFAULT_TYPE):
                             logging.exception(f"Error processing chunk: {chunk}")
                             continue
 
-                if current_message:
-                    await update.message.reply_text(current_message)
+                if current_message or refs:
+                    full_message = current_message or ""
+                    if refs:
+                        links_message = "\n相关链接:\n"
+                        for title, href in refs:
+                            links_message += f"{title}: {href}\n"
+                        full_message += links_message
 
-            if refs:
-                links_message = "相关链接:\n"
-                for title, href in refs:
-                    links_message += f"{title}: {href}\n"
-                await update.message.reply_text(links_message)
+                    # Split message if it exceeds 4000 characters
+                    while len(full_message) > 4000:
+                        # Find last newline before 4000 chars
+                        split_point = full_message[:4000].rfind('\n')
+                        if split_point == -1:
+                            split_point = 4000
+
+                        # Send first part and update remaining message
+                        await update.message.reply_text(full_message[:split_point])
+                        full_message = full_message[split_point:].lstrip()
+
+                    # Send remaining message if any
+                    if full_message:
+                        await update.message.reply_text(full_message)
 
 def main():
     # 创建应用
