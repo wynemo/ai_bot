@@ -43,21 +43,23 @@ async def handle_mention(update: Update, context: ContextTypes.DEFAULT_TYPE):
                     return
                 ddgs_gen = ddgs.text(key_words, safesearch='Off', timelimit='y', backend="lite", max_results=20)
                 refs = map(lambda x: (x["title"], x["href"],), ddgs_gen)
-        elif update.message.text.startswith('/fetch'):
-            urls = re.findall('http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\\(\\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+', update.message.text)
-            # 检查消息中是否包含 http 链接
-            if urls:
-                async with httpx.AsyncClient() as client:
-                    for url in urls:
-                        try:
-                            response = await client.get(url, follow_redirects=True)
-                            response_text = f"URL内容:\n{response.text}"
-                            response_text = clean_html(response_text)
-                            # print(response_text)
-                        except Exception as e:
-                            await update.message.reply_text(f"获取URL内容失败: {str(e)}")
-                            return
-                        break
+
+        # 检查消息中是否包含 http 链接
+        urls = re.findall('http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\\(\\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+', update.message.text)
+        if urls:
+            async with httpx.AsyncClient() as client:
+                for url in urls:
+                    try:
+                        response = await client.get(url, follow_redirects=True)
+                        response_text = f"URL内容:\n{response.text}"
+                        response_text = clean_html(response_text)
+                        # print(response_text)
+                    except Exception as e:
+                        await update.message.reply_text(f"获取URL内容失败: {str(e)}")
+                        return
+                    # 现在就检查一个就行了
+                    break
+
         # 这里可以调用你的 API
         async with httpx.AsyncClient(timeout=180) as client:
             url = f'{settings.API_URL}/chat/completions'
