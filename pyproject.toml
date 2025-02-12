@@ -10,3 +10,9 @@ dependencies = [
     "httpx>=0.28.1",
     "python-telegram-bot>=21.10",
 ]
+
+[dependency-groups]
+dev = [
+    "black>=25.1.0",
+    "isort>=6.0.0",
+]
