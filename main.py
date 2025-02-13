@@ -1,7 +1,10 @@
+import asyncio
 import datetime
 import json
 import logging
 import re
+import time
+from math import exp
 
 import httpx
 from duckduckgo_search import DDGS
@@ -152,7 +155,11 @@ async def handle_mention(update: Update, context: ContextTypes.DEFAULT_TYPE):
                                 continue
                             obj = json.loads(chunk)
                             if len(obj["choices"]) > 0:
-                                content = obj["choices"][0]["delta"].get("content", "")
+                                content = obj["choices"][0]["delta"].get(
+                                    "content", ""
+                                ) or obj["choices"][0]["delta"].get(
+                                    "reasoning_content", ""
+                                )
                                 if content:
                                     current_message += content
                                     if len(current_message) >= 4000:
@@ -212,4 +219,18 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    while True:
+        try:
+            # 确保每次循环都有一个新的事件循环
+            asyncio.set_event_loop(asyncio.new_event_loop())
+            main()
+        except Exception:
+            logging.exception("something went wrong in main telegram bot")
+            # 清理当前的事件循环
+            try:
+                loop = asyncio.get_event_loop()
+                loop.close()
+            except Exception:
+                pass
+            # sleep for 10 seconds before retrying
+            time.sleep(10)
