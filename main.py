@@ -2,9 +2,8 @@ import asyncio
 import datetime
 import json
 import logging
+import os
 import re
-import time
-from math import exp
 
 import httpx
 from duckduckgo_search import DDGS
@@ -25,6 +24,12 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(
         "你好！我是机器人，@我并发送消息，我会回复你。可以用/search 内容, /fetch 网页 这两个指令"
     )
+
+
+async def error_handler(update: object, context: ContextTypes.DEFAULT_TYPE) -> None:
+    print("exit")
+    logging.error("Exception while handling an update:", exc_info=context.error)
+    os._exit(0)
 
 
 # 处理被 @ 的消息
@@ -198,6 +203,66 @@ async def handle_mention(update: Update, context: ContextTypes.DEFAULT_TYPE):
                         await update.message.reply_text(full_message)
 
 
+async def handle_mars(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    # Implement Mars-related functionality here
+    prompt = """首先你需要将句子的文字翻转，即编程中的字符串翻转，比如我会输入“亲父的他是谁”，你输出“谁是他的父亲”，你不要考虑翻转过后的句子是否通顺。
+    然后你把句子文字转换为火星文，火星文通常会用一些不常见的字、近似字、繁体字、或类似字体来代替原有的字，
+    比如“獨傢--婀里妑妑骉囩啝駦卂創始亾骉囮駦將傪咖蓙談浍--消息亾仕”，其实是“独家 — 阿里巴巴马云与腾讯创始人马化腾讲参加座谈会-消息人士”。
+    火星文转换不能只用繁体字替换，不用考虑句子是否通顺，大概意思明白就行。
+    无需深度推理，你需要快速处理我输入的文字："""
+    input_words = update.message.text.strip("/mars")
+    input_words = input_words.strip(BOT_NAME)
+
+    # 这里可以调用你的 API
+    async with httpx.AsyncClient(timeout=180) as client:
+        url = f"{settings.API_URL}/chat/completions"
+        # url = 'https://api.siliconflow.cn/v1/chat/completions'
+        print(f"using {url} {settings.MODEL_NAME}")
+        headers = {"authorization": f"Bearer {settings.API_SECRET}"}
+        data = {
+            "model": settings.MODEL_NAME,
+            "temperature": 0.4,
+            "top_p": 1,
+            "frequency_penalty": 0,
+            "presence_penalty": 0,
+            "n": 1,
+            "stream": True,
+            "messages": [{"role": "user", "content": prompt + input_words[::-1]}],
+        }
+
+        async with client.stream("POST", url, headers=headers, json=data) as response:
+            current_message = ""
+            async for chunk in response.aiter_lines():
+                if chunk.startswith("data: "):
+                    try:
+                        chunk = chunk[6:]  # Remove 'data: ' prefix
+                        if chunk.strip() == "[DONE]":
+                            break
+                        obj = json.loads(chunk)
+                        if len(obj["choices"]) > 0:
+                            content = obj["choices"][0]["delta"].get(
+                                "content", ""
+                            ) or obj["choices"][0]["delta"].get("reasoning_content", "")
+                            if content:
+                                # print(content)
+                                current_message += content
+                                if len(current_message) >= 4000:
+                                    await update.message.reply_text(current_message)
+                                    current_message = ""
+                            else:
+                                pass
+                                # print(obj)
+                        else:
+                            print("-----------------", "no choices")
+                    except Exception:
+                        print("-----------------", "there is something wrong")
+                        logging.exception(f"Error processing chunk: {chunk}")
+                        continue
+            if current_message:
+                await update.message.reply_text(current_message)
+            print("finished", len(current_message))
+
+
 def main():
     # 创建应用
     application = Application.builder().token(TOKEN).build()
@@ -206,6 +271,7 @@ def main():
     application.add_handler(CommandHandler("start", start))
     application.add_handler(CommandHandler("search", handle_mention))
     application.add_handler(CommandHandler("fetch", handle_mention))
+    application.add_handler(CommandHandler("mars", handle_mars))
     application.add_handler(
         MessageHandler(filters.TEXT & ~filters.COMMAND, handle_mention)
     )
@@ -213,24 +279,12 @@ def main():
         MessageHandler(filters.TEXT & filters.Entity("mention"), handle_mention)
     )
 
+    application.add_error_handler(error_handler)
+
     # 启动机器人
     print("机器人已启动...")
     application.run_polling()
 
 
 if __name__ == "__main__":
-    while True:
-        try:
-            # 确保每次循环都有一个新的事件循环
-            asyncio.set_event_loop(asyncio.new_event_loop())
-            main()
-        except Exception:
-            logging.exception("something went wrong in main telegram bot")
-            # 清理当前的事件循环
-            try:
-                loop = asyncio.get_event_loop()
-                loop.close()
-            except Exception:
-                pass
-            # sleep for 10 seconds before retrying
-            time.sleep(10)
+    main()
