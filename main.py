@@ -205,17 +205,21 @@ async def handle_mention(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 async def handle_mars(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    input_words = update.message.text.replace("/mars", "", 1)
-    input_words = input_words.replace(BOT_NAME, "", 1)
-    if not input_words:
-        await update.message.reply_text("请输入要转换的文字")
+    if not update.message:
+        print('no message')
         return
+    if  update.message.entities and any(entity.type == "bot_command" for entity in update.message.entities):
+        input_words = update.message.text.replace("/mars", "", 1)
+        input_words = input_words.replace(BOT_NAME, "", 1)
+        if not input_words:
+            await update.message.reply_text("请输入要转换的文字")
+            return
 
-    # Convert input words to Mars language
-    mars_words = convert(input_words, 3)
+        # Convert input words to Mars language
+        mars_words = convert(input_words, 3)
 
-    # Send converted message
-    await update.message.reply_text(mars_words)
+        # Send converted message
+        await update.message.reply_text(mars_words)
 
 
 def main():
