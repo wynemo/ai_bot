@@ -16,10 +16,12 @@
 
 - 在电报 @BotFather 那里创建一个机器人
 - 获取到token后，保存，后续将`BOT_TOKEN`内容设置为它。
-- 加入search与fetch两个命令：
+- 用setcommands 设置几个命令：
 ```
-search - 通过网络搜索, search by web
+start - 开始
+search - 命令后跟文字 通过网络搜索, search by web
 fetch - 获取网页信息
+mars - 命令后跟文字，转换为火星文
 ```
 
 
@@ -55,6 +57,7 @@ docker-compose up -d
 - `/start` - 获取使用说明
 - `/search [关键词]` - 搜索内容
 - `/fetch [URL]` - 获取网页内容
+- `/mars [文字]` - 命令后跟文字，转换为火星文
 - 群聊里 直接 @ 机器人 - 进行对话
 
 ## 依赖
