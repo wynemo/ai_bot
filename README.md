@@ -74,4 +74,6 @@ docker-compose up -d
 
 ## todo
 
-清理html有问题 https://www.foreignaffairs.com/united-states/path-american-authoritarianism-trump?continueFlag=ef3c5d6fc1ef621eb6fc041f2078ae4a 比如这个
+1. 清理html有问题 更好的算法 https://www.foreignaffairs.com/united-states/path-american-authoritarianism-trump?continueFlag=ef3c5d6fc1ef621eb6fc041f2078ae4a 比如这个
+2. 支持 youtube 视频字幕总结
+3. 多轮对话
