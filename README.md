@@ -43,7 +43,7 @@ MODEL_NAME=模型名称
 ```bash
 # 设置环境变量 API_SECRET API_URL 等
 pip install -r requirements.txt
-python main.py
+python guard.py
 ```
 
 2. Docker compose 运行:
