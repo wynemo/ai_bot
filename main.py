@@ -39,6 +39,9 @@ async def error_handler(update: object, context: ContextTypes.DEFAULT_TYPE) -> N
 
 # 处理被 @ 的消息
 async def handle_mention(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if not update.message:
+        print("no message")
+        return
     # 确保消息中提到了机器人
     print(update.message.entities, update.message.text)
     for each in update.message.entities:
@@ -153,6 +156,7 @@ async def handle_mention(update: Update, context: ContextTypes.DEFAULT_TYPE):
                     }
                 )
 
+            # f = open("test.txt", "wt")
             async with client.stream(
                 "POST", url, headers=headers, json=data
             ) as response:
@@ -171,10 +175,13 @@ async def handle_mention(update: Update, context: ContextTypes.DEFAULT_TYPE):
                                     "reasoning_content", ""
                                 )
                                 if content:
+                                    # f.write(content)
                                     current_message += content
-                                    if len(current_message) >= 4000:
-                                        await update.message.reply_text(current_message)
-                                        current_message = ""
+                                    while len(current_message) >= 4000:
+                                        await update.message.reply_text(
+                                            current_message[:4000]
+                                        )
+                                        current_message = current_message[4000:]
                             else:
                                 print("-----------------", "no choices")
                         except Exception:
@@ -193,26 +200,24 @@ async def handle_mention(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
                     # Split message if it exceeds 4000 characters
                     while len(full_message) > 4000:
-                        # Find last newline before 4000 chars
-                        split_point = full_message[:4000].rfind("\n")
-                        if split_point == -1:
-                            split_point = 4000
-
-                        # Send first part and update remaining message
-                        await update.message.reply_text(full_message[:split_point])
-                        full_message = full_message[split_point:].lstrip()
+                        # Send first 4000 chars and update remaining message
+                        await update.message.reply_text(full_message[:4000])
+                        full_message = full_message[4000:].lstrip()
 
                     # Send remaining message if any
                     if full_message:
-                        print("sending message", len(full_message))
+                        # print("sending message", len(full_message))
                         await update.message.reply_text(full_message)
+            # f.close()
 
 
 async def handle_mars(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not update.message:
-        print('no message')
+        print("no message")
         return
-    if  update.message.entities and any(entity.type == "bot_command" for entity in update.message.entities):
+    if update.message.entities and any(
+        entity.type == "bot_command" for entity in update.message.entities
+    ):
         input_words = update.message.text.replace("/mars", "", 1)
         input_words = input_words.replace(BOT_NAME, "", 1)
         if not input_words:
