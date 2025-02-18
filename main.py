@@ -16,6 +16,7 @@ from telegram.ext import (Application, CommandHandler, ContextTypes,
 import settings
 from clean import clean_html
 from spark import convert
+from youtube import get_video_caption
 
 # 替换成你从 BotFather 获取的 token
 TOKEN = settings.BOT_TOKEN
@@ -225,6 +226,91 @@ async def handle_mars(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text(mars_words)
 
 
+def get_text_iter(text):
+    # 字符串超过4000， 需要分段发送，分段发送，每段不超过4000字节
+    for i in range(0, len(text), 4000):
+        yield text[i : i + 4000]
+
+
+async def handle_youtube(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if not update.message:
+        print("no message")
+        return
+    if update.message.entities and any(
+        entity.type == "bot_command" for entity in update.message.entities
+    ):
+        input_words = update.message.text.replace("/youtube", "", 1)
+        input_words = input_words.replace(BOT_NAME, "", 1)
+        # get youtube caption
+        result = await asyncio.to_thread(get_video_caption, input_words.strip())
+        if result:
+            async for each in call_api(result):
+                await update.message.reply_text(each)
+        else:
+            await update.message.reply_text("下载视频字幕失败")
+
+async def call_api(user_text):
+    # 这里可以调用你的 API
+    async with httpx.AsyncClient(timeout=180) as client:
+        url = f"{settings.API_URL}/chat/completions"
+        print(f"using {url} {settings.MODEL_NAME}")
+        headers = {"authorization": f"Bearer {settings.API_SECRET}"}
+        data = {
+            "model": settings.MODEL_NAME,
+            "temperature": 0.4,
+            "top_p": 1,
+            "frequency_penalty": 0,
+            "presence_penalty": 0,
+            "n": 1,
+            "stream": True,
+            "messages": [
+                {"role": "user", "content": user_text + ", 用中文回复"}
+            ],
+        }
+        data["messages"].append(
+            {
+                "role": "system",
+                "content": f"""You are an AI model who is expert at searching the web and answering user\'s queries.
+                                    \\n\\nGenerate a response that is informative and relevant to the user\'s query based on provided search results.
+                                        the current date and time are {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}:\n
+                                        """,
+            }
+        )
+
+
+        async with client.stream(
+            "POST", url, headers=headers, json=data
+        ) as response:
+            current_message = ""
+            async for chunk in response.aiter_lines():
+                if chunk.startswith("data: "):
+                    try:
+                        chunk = chunk[6:]  # Remove 'data: ' prefix
+                        if chunk.strip() == "[DONE]":
+                            continue
+                        obj = json.loads(chunk)
+                        if len(obj["choices"]) > 0:
+                            content = obj["choices"][0]["delta"].get(
+                                "content", ""
+                            ) or obj["choices"][0]["delta"].get(
+                                "reasoning_content", ""
+                            )
+                            if content:
+                                current_message += content
+                                while len(current_message) >= 4000:
+                                    yield current_message[:4000]
+                                    current_message = current_message[4000:]
+                        else:
+                            print("-----------------", "no choices")
+                    except Exception:
+                        print("-----------------", "there is something wrong")
+                        logging.exception(f"Error processing chunk: {chunk}")
+                        continue
+            if current_message:
+                yield current_message
+            print("finished")
+
+
 def main():
     # 创建应用
     application = Application.builder().token(TOKEN).build()
@@ -234,6 +320,7 @@ def main():
     application.add_handler(CommandHandler("search", handle_mention))
     application.add_handler(CommandHandler("fetch", handle_mention))
     application.add_handler(CommandHandler("mars", handle_mars))
+    application.add_handler(CommandHandler("youtube", handle_youtube))
     application.add_handler(
         MessageHandler(filters.TEXT & ~filters.COMMAND, handle_mention)
     )
