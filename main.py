@@ -6,6 +6,8 @@ import os
 import re
 
 import httpx
+import primp
+import telegram.error
 from duckduckgo_search import DDGS
 from telegram import Update
 from telegram.ext import (Application, CommandHandler, ContextTypes,
@@ -30,7 +32,8 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def error_handler(update: object, context: ContextTypes.DEFAULT_TYPE) -> None:
     print("exit")
     logging.error("Exception while handling an update:", exc_info=context.error)
-    os._exit(0)
+    if isinstance(context.error, telegram.error.NetworkError):
+        os._exit(0)
 
 
 # 处理被 @ 的消息
