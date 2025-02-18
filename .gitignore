@@ -10,3 +10,10 @@ wheels/
 .venv
 
 *.fuck
+
+.DS_Store
+.idea/
+1.txt
+bot.log
+cache/
+test.txt
