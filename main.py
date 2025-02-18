@@ -94,7 +94,12 @@ async def handle_mention(update: Update, context: ContextTypes.DEFAULT_TYPE):
             async with httpx.AsyncClient() as client:
                 for url in urls:
                     try:
-                        response = await client.get(url, follow_redirects=True)
+                        client = primp.Client(
+                            impersonate="chrome_131",
+                            impersonate_os="windows",
+                            follow_redirects=True,
+                        )
+                        response = client.get(url)
                         response_text = f"URL内容:\n{response.text}"
                         response_text = clean_html(response_text)
                         # print(response_text)
