@@ -2,3 +2,7 @@ python-telegram-bot
 beautifulsoup4
 duckduckgo-search
 httpx
+yt-dlp
+webvtt-py
+requests
+primp
