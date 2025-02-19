@@ -34,7 +34,19 @@ async def error_handler(update: object, context: ContextTypes.DEFAULT_TYPE) -> N
     print("exit")
     logging.error("Exception while handling an update:", exc_info=context.error)
     if isinstance(context.error, telegram.error.NetworkError):
+        # 不可恢复的,unrecoverable
         os._exit(0)
+
+
+def get_html_content(url):
+    client = primp.Client(
+        impersonate="chrome_131",
+        impersonate_os="windows",
+        follow_redirects=True)
+    response = client.get(url)
+    response_text = f"URL内容:\n{response.text}"
+    response_text = clean_html(response_text)
+    return response_text
 
 
 # 处理被 @ 的消息
@@ -94,14 +106,7 @@ async def handle_mention(update: Update, context: ContextTypes.DEFAULT_TYPE):
             async with httpx.AsyncClient() as client:
                 for url in urls:
                     try:
-                        client = primp.Client(
-                            impersonate="chrome_131",
-                            impersonate_os="windows",
-                            follow_redirects=True,
-                        )
-                        response = client.get(url)
-                        response_text = f"URL内容:\n{response.text}"
-                        response_text = clean_html(response_text)
+                        response_text = await asyncio.to_thread(get_html_content, url)
                         # print(response_text)
                     except Exception as e:
                         await update.message.reply_text(f"获取URL内容失败: {str(e)}")

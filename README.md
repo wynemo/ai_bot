@@ -78,9 +78,3 @@ docker-compose up -d
 2. 支持 youtube 视频字幕总结 参考 https://github.com/stong/tldw
 3. 多轮对话
 4. 重构，发消息那块，改为迭代器
-5. 用 primp 伪装成浏览器获取网页内容
-Social Blade的自动化防护系统检测到以下异常行为特征：
-- 检测到使用Python的HTTPX库（非人类浏览器访问）
-- 当前IP地址188.253.115.249被识别为数据中心网络
-- 疑似自动化爬虫行为
-https://socialblade.com/youtube/channel/UC3Leg5c3i4EP1JXoweQ2_rA
