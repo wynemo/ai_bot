@@ -106,7 +106,10 @@ async def handle_mention(update: Update, context: ContextTypes.DEFAULT_TYPE):
             async with httpx.AsyncClient() as client:
                 for url in urls:
                     try:
-                        response_text = await asyncio.to_thread(get_html_content, url)
+                        if url.startswith('https://www.youtube.com/watch?v=') or url.startswith('https://youtu.be/'):
+                            response_text = await asyncio.to_thread(get_video_caption, url.strip())
+                        else:
+                            response_text = await asyncio.to_thread(get_html_content, url)
                         # print(response_text)
                     except Exception as e:
                         await update.message.reply_text(f"获取URL内容失败: {str(e)}")
@@ -259,6 +262,7 @@ async def handle_youtube(update: Update, context: ContextTypes.DEFAULT_TYPE):
         # get youtube caption
         result = await asyncio.to_thread(get_video_caption, input_words.strip())
         if result:
+            print(f"youtube caption length: {len(result)}")
             async for each in call_api(result):
                 await update.message.reply_text(each)
         else:
