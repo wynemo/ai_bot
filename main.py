@@ -7,6 +7,7 @@ import re
 
 import httpx
 import primp
+import requests
 import telegram.error
 from duckduckgo_search import DDGS
 from telegram import Update
@@ -39,6 +40,14 @@ async def error_handler(update: object, context: ContextTypes.DEFAULT_TYPE) -> N
 
 
 def get_html_content(url):
+    if url.startswith('https://x.com') or url.startswith('https://fixupx.com'):
+        url = url.replace('https://x.com', 'https://fixupx.com', 1)
+        response = requests.get(url)
+        return response.text
+    if url.startswith('https://twitter.com') or url.startswith('https://fxtwitter.com'):
+        url = url.replace('https://twitter.com', 'https://fxtwitter.com', 1)
+        response = requests.get(url)
+        return response.text
     client = primp.Client(
         impersonate="chrome_131",
         impersonate_os="windows",
