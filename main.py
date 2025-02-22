@@ -52,6 +52,12 @@ def get_html_content(url):
         impersonate="chrome_131",
         impersonate_os="windows",
         follow_redirects=True)
+    if url.startswith('https://reddit.com'):
+        client = primp.Client(
+            impersonate=None,
+            impersonate_os=None,
+            headers = {"User-Agent": "Mozilla/5.0"},
+            follow_redirects=True)
     response = client.get(url)
     response_text = f"URL内容:\n{response.text}"
     response_text = clean_html(response_text)
