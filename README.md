@@ -81,4 +81,4 @@ docker-compose up -d
 3. 多轮对话
 4. 重构，发消息那块，改为迭代器
 5. 支持排除web搜索结果中的网站，比如知乎、csdn等
-6. 支持 bilibili 视频字幕总结
+6. 支持 bilibili 视频字幕总结 https://github.com/Fros1er/bilibili-subtitle-to-text 参考
