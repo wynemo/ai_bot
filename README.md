@@ -79,3 +79,4 @@ docker-compose up -d
 2. ~~支持 youtube 视频字幕总结 参考 https://github.com/stong/tldw~~
 3. 多轮对话
 4. 重构，发消息那块，改为迭代器
+5. 支持排除web搜索结果中的网站，比如知乎、csdn等
