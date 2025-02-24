@@ -3,6 +3,7 @@
 一个基于 Telegram 的智能机器人，集成了对话、网页内容获取和搜索功能。
 支持使用ollama，openai兼容的API
 支持访问聊天内容中的url 获取上下文
+支持youtube视频字幕总结
 
 ## 特点
 
@@ -80,3 +81,4 @@ docker-compose up -d
 3. 多轮对话
 4. 重构，发消息那块，改为迭代器
 5. 支持排除web搜索结果中的网站，比如知乎、csdn等
+6. 支持 bilibili 视频字幕总结
