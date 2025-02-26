@@ -83,4 +83,4 @@ docker-compose up -d
 5. 支持排除web搜索结果中的网站，比如知乎、csdn等
 6. ~~支持 bilibili 视频字幕总结 https://github.com/Fros1er/bilibili-subtitle-to-text 参考 懒得做了 b站没啥用~~
 7. 处理接受openai api时 网络请求错误的处理
-8. 似乎并发有问题
+8. 似乎并发有问题 https://github.com/python-telegram-bot/python-telegram-bot/wiki/Concurrency 原来默认没有支持并发 需要改参数
