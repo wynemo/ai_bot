@@ -97,7 +97,7 @@ async def handle_mention(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 if not key_words:
                     await update.message.reply_text("请输入搜索关键词")
                     return
-                ddgs_gen = ddgs.text(
+                ddgs_gen = await asyncio.to_thread(ddgs.text,
                     key_words,
                     safesearch="Off",
                     timelimit="y",
@@ -356,10 +356,10 @@ def main():
     application.add_handler(CommandHandler("mars", handle_mars))
     application.add_handler(CommandHandler("youtube", handle_youtube))
     application.add_handler(
-        MessageHandler(filters.TEXT & ~filters.COMMAND, handle_mention)
+        MessageHandler(filters.TEXT & ~filters.COMMAND, handle_mention, block=False)
     )
     application.add_handler(
-        MessageHandler(filters.TEXT & filters.Entity("mention"), handle_mention)
+        MessageHandler(filters.TEXT & filters.Entity("mention"), handle_mention, block=False)
     )
 
     application.add_error_handler(error_handler)
