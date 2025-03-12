@@ -143,8 +143,8 @@ async def handle_mention(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 # "model": "deepseek-r1",
                 "temperature": 0.4,
                 "top_p": 1,
-                "frequency_penalty": 0,
-                "presence_penalty": 0,
+                # "frequency_penalty": 0,
+                # "presence_penalty": 0,
                 "n": 1,
                 "stream": True,
                 "messages": [
@@ -188,6 +188,7 @@ async def handle_mention(update: Update, context: ContextTypes.DEFAULT_TYPE):
             async with client.stream(
                 "POST", url, headers=headers, json=data
             ) as response:
+                print(response.status_code)
                 current_message = ""
                 async for chunk in response.aiter_lines():
                     if chunk.startswith("data: "):
@@ -216,6 +217,9 @@ async def handle_mention(update: Update, context: ContextTypes.DEFAULT_TYPE):
                             print("-----------------", "there is something wrong")
                             logging.exception(f"Error processing chunk: {chunk}")
                             continue
+                    else:
+                        if response.status_code >= 400:
+                            print("chuck is", chunk)
                 print("finished")
 
                 if current_message or refs:
