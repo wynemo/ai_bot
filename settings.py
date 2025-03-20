@@ -5,3 +5,5 @@ API_SECRET = os.getenv('API_SECRET')
 BOT_TOKEN = os.getenv('BOT_TOKEN')
 BOT_NAME = os.getenv('BOT_NAME')
 MODEL_NAME = os.getenv('MODEL_NAME', 'deepseek-ai/deepseek-r1')
+DEBUG = os.getenv('DEBUG', None)
+

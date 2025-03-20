@@ -3,7 +3,10 @@ import sys
 import time
 import signal
 import logging
+from logging.handlers import RotatingFileHandler
+
 from main import main
+import settings
 
 def run_bot():
     while True:
@@ -44,11 +47,19 @@ def run_bot():
 
 if __name__ == "__main__":
     # 配置日志
+    if settings.DEBUG:
+        level = logging.DEBUG
+    else:
+        level = logging.ERROR
     logging.basicConfig(
-        level=logging.ERROR,
+        level=level,
         format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
         handlers=[
-            logging.FileHandler('bot.log'),
+            RotatingFileHandler(
+                'bot.log',
+                maxBytes=20485760,  # 20MB
+                backupCount=5      # Keep 5 backup files
+            ),
             logging.StreamHandler()
         ]
     )
