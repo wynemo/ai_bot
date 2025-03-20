@@ -97,13 +97,17 @@ async def handle_mention(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 if not key_words:
                     await update.message.reply_text("请输入搜索关键词")
                     return
-                ddgs_gen = await asyncio.to_thread(ddgs.text,
-                    key_words,
-                    safesearch="Off",
-                    timelimit="y",
-                    backend="lite",
-                    max_results=20,
-                )
+                try:
+                    ddgs_gen = await asyncio.to_thread(ddgs.text,
+                        key_words,
+                        safesearch="Off",
+                        timelimit="y",
+                        backend="lite",
+                        max_results=20,
+                    )
+                except Exception as e:
+                    await update.message.reply_text(f"搜索失败：{e}")
+                    return
                 refs = map(
                     lambda x: (
                         x["title"],
