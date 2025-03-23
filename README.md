@@ -86,4 +86,4 @@ docker-compose up -d
 8. 似乎并发有问题 https://github.com/python-telegram-bot/python-telegram-bot/wiki/Concurrency 原来默认没有支持并发 需要改参数 处理了一些了
 9. 支持除了duckduckgo的其他搜索 比如tavily
 10. ~~搜索报错的时候返回错误信息到聊天~~
-11. 用一段时间老是接收不到消息 得排查bug
+11. ~~用一段时间老是接收不到消息 得排查bug~~ 似乎已经修正
