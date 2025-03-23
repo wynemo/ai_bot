@@ -374,7 +374,7 @@ def main():
 
     # 启动机器人
     print("机器人已启动...")
-    application.run_polling()
+    application.run_polling(pool_timeout=5)
 
 
 if __name__ == "__main__":
