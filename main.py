@@ -1,3 +1,4 @@
+from multiprocessing import pool
 import asyncio
 import datetime
 import json
@@ -13,6 +14,7 @@ from duckduckgo_search import DDGS
 from telegram import Update
 from telegram.ext import (Application, CommandHandler, ContextTypes,
                           MessageHandler, filters)
+from telegram.request import HTTPXRequest
 
 import settings
 from clean import clean_html
@@ -354,7 +356,8 @@ async def call_api(user_text):
 
 def main():
     # 创建应用
-    application = Application.builder().token(TOKEN).build()
+    r = HTTPXRequest(connection_pool_size=100, pool_timeout=7)
+    application = Application.builder().token(TOKEN).request(r).build()
 
     # 添加处理器
     application.add_handler(CommandHandler("start", start))
@@ -373,7 +376,7 @@ def main():
 
     # 启动机器人
     print("机器人已启动...")
-    application.run_polling(pool_timeout=5)
+    application.run_polling(timeout=9)
 
 
 if __name__ == "__main__":
