@@ -122,19 +122,18 @@ async def handle_mention(update: Update, context: ContextTypes.DEFAULT_TYPE):
             update.message.text,
         )
         if urls:
-            async with httpx.AsyncClient() as client:
-                for url in urls:
-                    try:
-                        if url.startswith('https://www.youtube.com/watch?v=') or url.startswith('https://youtu.be/'):
-                            response_text = await asyncio.to_thread(get_video_caption, url.strip())
-                        else:
-                            response_text = await asyncio.to_thread(get_html_content, url)
-                        # print(response_text)
-                    except Exception as e:
-                        await update.message.reply_text(f"获取URL内容失败: {str(e)}")
-                        return
-                    # 现在就检查一个就行了
-                    break
+            for url in urls:
+                try:
+                    if url.startswith('https://www.youtube.com/watch?v=') or url.startswith('https://youtu.be/'):
+                        response_text = await asyncio.to_thread(get_video_caption, url.strip())
+                    else:
+                        response_text = await asyncio.to_thread(get_html_content, url)
+                    # print(response_text)
+                except Exception as e:
+                    await update.message.reply_text(f"获取URL内容失败: {str(e)}")
+                    return
+                # 现在就检查一个就行了
+                break
 
         # 这里可以调用你的 API
         async with httpx.AsyncClient(timeout=180) as client:
