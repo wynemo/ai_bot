@@ -72,7 +72,6 @@ async def handle_mention(update: Update, context: ContextTypes.DEFAULT_TYPE):
         logging.info("no message")
         return
     # 确保消息中提到了机器人
-    logging.info(update.message.entities, update.message.text)
     for each in update.message.entities:
         logging.info(each.type)
     if (
@@ -87,6 +86,7 @@ async def handle_mention(update: Update, context: ContextTypes.DEFAULT_TYPE):
             and BOT_NAME in update.message.text
         )
     ):
+        logging.info(f"{update.message.entities}, {update.message.text}")
         ddgs_gen = None
         response_text = None
         refs = None
