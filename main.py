@@ -32,7 +32,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 async def error_handler(update: object, context: ContextTypes.DEFAULT_TYPE) -> None:
-    print("exit")
+    logging.info("exit")
     logging.error("Exception while handling an update:", exc_info=context.error)
     if isinstance(context.error, telegram.error.NetworkError):
         # 不可恢复的,unrecoverable
@@ -67,12 +67,12 @@ def get_html_content(url):
 # 处理被 @ 的消息
 async def handle_mention(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not update.message:
-        print("no message")
+        logging.info("no message")
         return
     # 确保消息中提到了机器人
-    print(update.message.entities, update.message.text)
+    logging.info(update.message.entities, update.message.text)
     for each in update.message.entities:
-        print(each.type)
+        logging.info(each.type)
     if (
         update.message.chat.type == "private"
         or (
@@ -93,7 +93,7 @@ async def handle_mention(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 # 使用DuckDuckGo搜索关键词
                 key_words = update.message.text.strip("/search")
                 key_words = key_words.strip(BOT_NAME)
-                print("keys words", key_words)
+                logging.info("keys words", key_words)
                 if not key_words:
                     await update.message.reply_text("请输入搜索关键词")
                     return
@@ -129,7 +129,7 @@ async def handle_mention(update: Update, context: ContextTypes.DEFAULT_TYPE):
                             response_text = await asyncio.to_thread(get_video_caption, url.strip())
                         else:
                             response_text = await asyncio.to_thread(get_html_content, url)
-                        # print(response_text)
+                        # logging.info(response_text)
                     except Exception as e:
                         await update.message.reply_text(f"获取URL内容失败: {str(e)}")
                         return
@@ -140,7 +140,7 @@ async def handle_mention(update: Update, context: ContextTypes.DEFAULT_TYPE):
         async with httpx.AsyncClient(timeout=180) as client:
             url = f"{settings.API_URL}/chat/completions"
             # url = 'https://api.siliconflow.cn/v1/chat/completions'
-            print(f"using {url} {settings.MODEL_NAME}")
+            logging.info(f"using {url} {settings.MODEL_NAME}")
             headers = {"authorization": f"Bearer {settings.API_SECRET}"}
             data = {
                 "model": settings.MODEL_NAME,
@@ -192,7 +192,7 @@ async def handle_mention(update: Update, context: ContextTypes.DEFAULT_TYPE):
             async with client.stream(
                 "POST", url, headers=headers, json=data
             ) as response:
-                print(response.status_code)
+                logging.info(response.status_code)
                 current_message = ""
                 async for chunk in response.aiter_lines():
                     if chunk.startswith("data: "):
@@ -216,15 +216,15 @@ async def handle_mention(update: Update, context: ContextTypes.DEFAULT_TYPE):
                                         )
                                         current_message = current_message[4000:]
                             else:
-                                print("-----------------", "no choices")
+                                logging.info("-----------------", "no choices")
                         except Exception:
-                            print("-----------------", "there is something wrong")
+                            logging.info("-----------------", "there is something wrong")
                             logging.exception(f"Error processing chunk: {chunk}")
                             continue
                     else:
                         if response.status_code >= 400:
-                            print("chuck is", chunk)
-                print("finished")
+                            logging.info("chuck is", chunk)
+                logging.info("finished")
 
                 if current_message or refs:
                     full_message = current_message or ""
@@ -242,14 +242,14 @@ async def handle_mention(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
                     # Send remaining message if any
                     if full_message:
-                        # print("sending message", len(full_message))
+                        # logging.info("sending message", len(full_message))
                         await update.message.reply_text(full_message)
             # f.close()
 
 
 async def handle_mars(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not update.message:
-        print("no message")
+        logging.info("no message")
         return
     if update.message.entities and any(
         entity.type == "bot_command" for entity in update.message.entities
@@ -275,7 +275,7 @@ def get_text_iter(text):
 
 async def handle_youtube(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not update.message:
-        print("no message")
+        logging.info("no message")
         return
     if update.message.entities and any(
         entity.type == "bot_command" for entity in update.message.entities
@@ -285,7 +285,7 @@ async def handle_youtube(update: Update, context: ContextTypes.DEFAULT_TYPE):
         # get youtube caption
         result = await asyncio.to_thread(get_video_caption, input_words.strip())
         if result:
-            print(f"youtube caption length: {len(result)}")
+            logging.info(f"youtube caption length: {len(result)}")
             async for each in call_api(result):
                 await update.message.reply_text(each)
         else:
@@ -295,7 +295,7 @@ async def call_api(user_text):
     # 这里可以调用你的 API
     async with httpx.AsyncClient(timeout=180) as client:
         url = f"{settings.API_URL}/chat/completions"
-        print(f"using {url} {settings.MODEL_NAME}")
+        logging.info(f"using {url} {settings.MODEL_NAME}")
         headers = {"authorization": f"Bearer {settings.API_SECRET}"}
         data = {
             "model": settings.MODEL_NAME,
@@ -343,14 +343,14 @@ async def call_api(user_text):
                                     yield current_message[:4000]
                                     current_message = current_message[4000:]
                         else:
-                            print("-----------------", "no choices")
+                            logging.info("-----------------", "no choices")
                     except Exception:
-                        print("-----------------", "there is something wrong")
+                        logging.info("-----------------", "there is something wrong")
                         logging.exception(f"Error processing chunk: {chunk}")
                         continue
             if current_message:
                 yield current_message
-            print("finished")
+            logging.info("finished")
 
 
 def main():
@@ -373,7 +373,7 @@ def main():
     application.add_error_handler(error_handler)
 
     # 启动机器人
-    print("机器人已启动...")
+    logging.info("机器人已启动...")
     application.run_polling(pool_timeout=5)
 
 
