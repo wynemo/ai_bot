@@ -225,7 +225,7 @@ async def handle_mention(update: Update, context: ContextTypes.DEFAULT_TYPE):
                     else:
                         if response.status_code >= 400:
                             logging.info("chuck is %s", chunk)
-                            await update.message.reply_text("response status code %d %s" % response.status_code, chunk)
+                            await update.message.reply_text("response status code %d %s" % (response.status_code, chunk))
                 logging.info("finished")
 
                 if current_message or refs:
