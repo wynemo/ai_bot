@@ -263,8 +263,8 @@ async def handle_mention(update: Update, context: ContextTypes.DEFAULT_TYPE):
                             # logging.info("sending message", len(full_message))
                             await update.message.reply_text(full_message)
             except Exception as e:
-                logging.exception("Error processing chunk")
-                await update.message.reply_text(str(e))
+                logging.exception("something wrong")
+                await update.message.reply_text("something wrong with client stream" + str(e) + str(type(e)))
             # f.close()
 
 
