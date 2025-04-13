@@ -1,10 +1,10 @@
-from multiprocessing import pool
 import asyncio
 import datetime
 import json
 import logging
 import os
 import re
+from multiprocessing import pool
 
 import httpx
 import primp
@@ -12,8 +12,13 @@ import requests
 import telegram.error
 from duckduckgo_search import DDGS
 from telegram import Update
-from telegram.ext import (Application, CommandHandler, ContextTypes,
-                          MessageHandler, filters)
+from telegram.ext import (
+    Application,
+    CommandHandler,
+    ContextTypes,
+    MessageHandler,
+    filters,
+)
 from telegram.request import HTTPXRequest
 
 import settings
@@ -42,24 +47,24 @@ async def error_handler(update: object, context: ContextTypes.DEFAULT_TYPE) -> N
 
 
 def get_html_content(url):
-    if url.startswith('https://x.com') or url.startswith('https://fixupx.com'):
-        url = url.replace('https://x.com', 'https://fixupx.com', 1)
+    if url.startswith("https://x.com") or url.startswith("https://fixupx.com"):
+        url = url.replace("https://x.com", "https://fixupx.com", 1)
         response = requests.get(url)
         return response.text
-    if url.startswith('https://twitter.com') or url.startswith('https://fxtwitter.com'):
-        url = url.replace('https://twitter.com', 'https://fxtwitter.com', 1)
+    if url.startswith("https://twitter.com") or url.startswith("https://fxtwitter.com"):
+        url = url.replace("https://twitter.com", "https://fxtwitter.com", 1)
         response = requests.get(url)
         return response.text
     client = primp.Client(
-        impersonate="chrome_131",
-        impersonate_os="windows",
-        follow_redirects=True)
-    if url.startswith('https://reddit.com'):
+        impersonate="chrome_131", impersonate_os="windows", follow_redirects=True
+    )
+    if url.startswith("https://reddit.com"):
         client = primp.Client(
             impersonate=None,
             impersonate_os=None,
-            headers = {"User-Agent": "Mozilla/5.0"},
-            follow_redirects=True)
+            headers={"User-Agent": "Mozilla/5.0"},
+            follow_redirects=True,
+        )
     response = client.get(url)
     response_text = f"URL内容:\n{response.text}"
     response_text = clean_html(response_text)
@@ -100,7 +105,8 @@ async def handle_mention(update: Update, context: ContextTypes.DEFAULT_TYPE):
                     await update.message.reply_text("请输入搜索关键词")
                     return
                 try:
-                    ddgs_gen = await asyncio.to_thread(ddgs.text,
+                    ddgs_gen = await asyncio.to_thread(
+                        ddgs.text,
                         key_words,
                         safesearch="Off",
                         timelimit="y",
@@ -126,8 +132,12 @@ async def handle_mention(update: Update, context: ContextTypes.DEFAULT_TYPE):
         if urls:
             for url in urls:
                 try:
-                    if url.startswith('https://www.youtube.com/watch?v=') or url.startswith('https://youtu.be/'):
-                        response_text = await asyncio.to_thread(get_video_caption, url.strip())
+                    if url.startswith(
+                        "https://www.youtube.com/watch?v="
+                    ) or url.startswith("https://youtu.be/"):
+                        response_text = await asyncio.to_thread(
+                            get_video_caption, url.strip()
+                        )
                     else:
                         response_text = await asyncio.to_thread(get_html_content, url)
                     # print(response_text)
@@ -190,61 +200,67 @@ async def handle_mention(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 )
 
             # f = open("test.txt", "wt")
-            async with client.stream(
-                "POST", url, headers=headers, json=data
-            ) as response:
-                logging.info(response.status_code)
-                current_message = ""
-                async for chunk in response.aiter_lines():
-                    if chunk.startswith("data: "):
-                        try:
-                            chunk = chunk[6:]  # Remove 'data: ' prefix
-                            if chunk.strip() == "[DONE]":
-                                continue
-                            obj = json.loads(chunk)
-                            if len(obj["choices"]) > 0:
-                                content = obj["choices"][0]["delta"].get(
-                                    "content", ""
-                                ) or obj["choices"][0]["delta"].get(
-                                    "reasoning_content", ""
+            try:
+                async with client.stream(
+                    "POST", url, headers=headers, json=data
+                ) as response:
+                    logging.info(response.status_code)
+                    current_message = ""
+                    async for chunk in response.aiter_lines():
+                        if chunk.startswith("data: "):
+                            try:
+                                chunk = chunk[6:]  # Remove 'data: ' prefix
+                                if chunk.strip() == "[DONE]":
+                                    continue
+                                obj = json.loads(chunk)
+                                if len(obj["choices"]) > 0:
+                                    content = obj["choices"][0]["delta"].get(
+                                        "content", ""
+                                    ) or obj["choices"][0]["delta"].get(
+                                        "reasoning_content", ""
+                                    )
+                                    if content:
+                                        # f.write(content)
+                                        current_message += content
+                                        while len(current_message) >= 4000:
+                                            await update.message.reply_text(
+                                                current_message[:4000]
+                                            )
+                                            current_message = current_message[4000:]
+                                else:
+                                    logging.info("-----------------", "no choices")
+                            except Exception:
+                                logging.info(
+                                    "-----------------", "there is something wrong"
                                 )
-                                if content:
-                                    # f.write(content)
-                                    current_message += content
-                                    while len(current_message) >= 4000:
-                                        await update.message.reply_text(
-                                            current_message[:4000]
-                                        )
-                                        current_message = current_message[4000:]
-                            else:
-                                logging.info("-----------------", "no choices")
-                        except Exception:
-                            logging.info("-----------------", "there is something wrong")
-                            logging.exception(f"Error processing chunk: {chunk}")
-                            continue
-                    else:
-                        if response.status_code >= 400:
-                            logging.info("chuck is", chunk)
-                logging.info("finished")
+                                logging.exception(f"Error processing chunk: {chunk}")
+                                continue
+                        else:
+                            if response.status_code >= 400:
+                                logging.info("chuck is", chunk)
+                    logging.info("finished")
 
-                if current_message or refs:
-                    full_message = current_message or ""
-                    if refs:
-                        links_message = "\n相关链接:\n"
-                        for title, href in refs:
-                            links_message += f"{title}: {href}\n"
-                        full_message += links_message
+                    if current_message or refs:
+                        full_message = current_message or ""
+                        if refs:
+                            links_message = "\n相关链接:\n"
+                            for title, href in refs:
+                                links_message += f"{title}: {href}\n"
+                            full_message += links_message
 
-                    # Split message if it exceeds 4000 characters
-                    while len(full_message) > 4000:
-                        # Send first 4000 chars and update remaining message
-                        await update.message.reply_text(full_message[:4000])
-                        full_message = full_message[4000:].lstrip()
+                        # Split message if it exceeds 4000 characters
+                        while len(full_message) > 4000:
+                            # Send first 4000 chars and update remaining message
+                            await update.message.reply_text(full_message[:4000])
+                            full_message = full_message[4000:].lstrip()
 
-                    # Send remaining message if any
-                    if full_message:
-                        # logging.info("sending message", len(full_message))
-                        await update.message.reply_text(full_message)
+                        # Send remaining message if any
+                        if full_message:
+                            # logging.info("sending message", len(full_message))
+                            await update.message.reply_text(full_message)
+            except Exception as e:
+                logging.exception("Error processing chunk")
+                await update.message.reply_text(str(e))
             # f.close()
 
 
@@ -292,6 +308,7 @@ async def handle_youtube(update: Update, context: ContextTypes.DEFAULT_TYPE):
         else:
             await update.message.reply_text("下载视频字幕失败")
 
+
 async def call_api(user_text):
     # 这里可以调用你的 API
     async with httpx.AsyncClient(timeout=180) as client:
@@ -306,9 +323,7 @@ async def call_api(user_text):
             "presence_penalty": 0,
             "n": 1,
             "stream": True,
-            "messages": [
-                {"role": "user", "content": user_text + ", 用中文回复"}
-            ],
+            "messages": [{"role": "user", "content": user_text + ", 用中文回复"}],
         }
         data["messages"].append(
             {
@@ -320,10 +335,7 @@ async def call_api(user_text):
             }
         )
 
-
-        async with client.stream(
-            "POST", url, headers=headers, json=data
-        ) as response:
+        async with client.stream("POST", url, headers=headers, json=data) as response:
             current_message = ""
             async for chunk in response.aiter_lines():
                 if chunk.startswith("data: "):
@@ -335,9 +347,7 @@ async def call_api(user_text):
                         if len(obj["choices"]) > 0:
                             content = obj["choices"][0]["delta"].get(
                                 "content", ""
-                            ) or obj["choices"][0]["delta"].get(
-                                "reasoning_content", ""
-                            )
+                            ) or obj["choices"][0]["delta"].get("reasoning_content", "")
                             if content:
                                 current_message += content
                                 while len(current_message) >= 4000:
@@ -369,7 +379,9 @@ def main():
         MessageHandler(filters.TEXT & ~filters.COMMAND, handle_mention, block=False)
     )
     application.add_handler(
-        MessageHandler(filters.TEXT & filters.Entity("mention"), handle_mention, block=False)
+        MessageHandler(
+            filters.TEXT & filters.Entity("mention"), handle_mention, block=False
+        )
     )
 
     application.add_error_handler(error_handler)
