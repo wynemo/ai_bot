@@ -148,124 +148,128 @@ async def handle_mention(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 break
 
         # 这里可以调用你的 API
-        async with httpx.AsyncClient(timeout=180) as client:
-            url = f"{settings.API_URL}/chat/completions"
-            # url = 'https://api.siliconflow.cn/v1/chat/completions'
-            logging.info(f"using {url} {settings.MODEL_NAME}")
-            headers = {"authorization": f"Bearer {settings.API_SECRET}"}
-            data = {
-                "model": settings.MODEL_NAME,
-                # "model": "deepseek-r1",
-                "temperature": 0.4,
-                "top_p": 1,
-                # "frequency_penalty": 0,
-                # "presence_penalty": 0,
-                "n": 1,
-                "stream": True,
-                "messages": [
-                    {"role": "user", "content": update.message.text + ", 用中文回复"}
-                ],
-            }
-            if ddgs_gen:
-                data["messages"].append(
-                    {
-                        "role": "system",
-                        "content": f"""You are an AI model who is expert at searching the web and answering user\'s queries.
-                            \\n\\nGenerate a response that is informative and relevant to the user\'s query based on provided search results.
-                                the current date and time are {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}:\n
-                                {json.dumps(ddgs_gen)}
-                                """,
-                    }
-                )
-            elif response_text:
-                data["messages"].append(
-                    {
-                        "role": "system",
-                        "content": f"""You are an AI model who is expert at searching the web and answering user\'s queries.
-                            \\n\\nGenerate a response that is informative and relevant to the user\'s query based on provided search results.
-                                the current date and time are {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}:\n
-                                {response_text}
-                                """,
-                    }
-                )
-            else:
-                data["messages"].append(
-                    {
-                        "role": "system",
-                        "content": f"""You are an AI model who is expert at searching the web and answering user\'s queries.
-                                            \\n\\nGenerate a response that is informative and relevant to the user\'s query based on provided search results.
-                                                the current date and time are {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}:\n
-                                                """,
-                    }
-                )
+        for model_name in settings.MODEL_NAMES.split(','):
+            async with httpx.AsyncClient(timeout=180) as client:
+                url = f"{settings.API_URL}/chat/completions"
+                # url = 'https://api.siliconflow.cn/v1/chat/completions'
+                logging.info(f"using {url} {model_name}")
+                headers = {"authorization": f"Bearer {settings.API_SECRET}"}
+                data = {
+                    "model": model_name,
+                    # "model": "deepseek-r1",
+                    "temperature": 0.4,
+                    "top_p": 1,
+                    # "frequency_penalty": 0,
+                    # "presence_penalty": 0,
+                    "n": 1,
+                    "stream": True,
+                    "messages": [
+                        {"role": "user", "content": update.message.text + ", 用中文回复"}
+                    ],
+                }
+                if ddgs_gen:
+                    data["messages"].append(
+                        {
+                            "role": "system",
+                            "content": f"""You are an AI model who is expert at searching the web and answering user\'s queries.
+                                \\n\\nGenerate a response that is informative and relevant to the user\'s query based on provided search results.
+                                    the current date and time are {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}:\n
+                                    {json.dumps(ddgs_gen)}
+                                    """,
+                        }
+                    )
+                elif response_text:
+                    data["messages"].append(
+                        {
+                            "role": "system",
+                            "content": f"""You are an AI model who is expert at searching the web and answering user\'s queries.
+                                \\n\\nGenerate a response that is informative and relevant to the user\'s query based on provided search results.
+                                    the current date and time are {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}:\n
+                                    {response_text}
+                                    """,
+                        }
+                    )
+                else:
+                    data["messages"].append(
+                        {
+                            "role": "system",
+                            "content": f"""You are an AI model who is expert at searching the web and answering user\'s queries.
+                                                \\n\\nGenerate a response that is informative and relevant to the user\'s query based on provided search results.
+                                                    the current date and time are {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}:\n
+                                                    """,
+                        }
+                    )
 
-            # f = open("test.txt", "wt")
-            try:
-                async with client.stream(
-                    "POST", url, headers=headers, json=data
-                ) as response:
-                    logging.info(response.status_code)
-                    current_message = ""
-                    async for chunk in response.aiter_lines():
-                        if chunk.startswith("data: "):
-                            try:
-                                chunk = chunk[6:]  # Remove 'data: ' prefix
-                                if chunk.strip() == "[DONE]":
-                                    continue
-                                obj = json.loads(chunk)
-                                if len(obj["choices"]) > 0:
-                                    content = obj["choices"][0]["delta"].get(
-                                        "content", ""
-                                    ) or obj["choices"][0]["delta"].get(
-                                        "reasoning_content", ""
+                # f = open("test.txt", "wt")
+                try:
+                    async with client.stream(
+                        "POST", url, headers=headers, json=data
+                    ) as response:
+                        logging.info(response.status_code)
+                        if response.status_code >= 400:
+                            continue
+                        current_message = ""
+                        async for chunk in response.aiter_lines():
+                            if chunk.startswith("data: "):
+                                try:
+                                    chunk = chunk[6:]  # Remove 'data: ' prefix
+                                    if chunk.strip() == "[DONE]":
+                                        continue
+                                    obj = json.loads(chunk)
+                                    if len(obj["choices"]) > 0:
+                                        content = obj["choices"][0]["delta"].get(
+                                            "content", ""
+                                        ) or obj["choices"][0]["delta"].get(
+                                            "reasoning_content", ""
+                                        )
+                                        if content:
+                                            # f.write(content)
+                                            current_message += content
+                                            while len(current_message) >= 4000:
+                                                await update.message.reply_text(
+                                                    current_message[:4000]
+                                                )
+                                                current_message = current_message[4000:]
+                                    else:
+                                        logging.info("-----------------", "no choices")
+                                except Exception:
+                                    logging.info(
+                                        "-----------------", "there is something wrong"
                                     )
-                                    if content:
-                                        # f.write(content)
-                                        current_message += content
-                                        while len(current_message) >= 4000:
-                                            await update.message.reply_text(
-                                                current_message[:4000]
-                                            )
-                                            current_message = current_message[4000:]
-                                else:
-                                    logging.info("-----------------", "no choices")
-                            except Exception:
-                                logging.info(
-                                    "-----------------", "there is something wrong"
-                                )
-                                logging.exception(f"Error processing chunk: {chunk}")
-                                continue
-                        else:
-                            if response.status_code >= 400:
-                                logging.info("chuck is %s", chunk)
-                                await update.message.reply_text(
-                                    "response status code %d %s"
-                                    % (response.status_code, chunk)
-                                )
-                    logging.info("finished")
+                                    logging.exception(f"Error processing chunk: {chunk}")
+                                    continue
+                            else:
+                                if response.status_code >= 400:
+                                    logging.info("chuck is %s", chunk)
+                                    await update.message.reply_text(
+                                        "response status code %d %s"
+                                        % (response.status_code, chunk)
+                                    )
+                        logging.info("finished")
 
-                    if current_message or refs:
-                        full_message = current_message or ""
-                        if refs:
-                            links_message = "\n相关链接:\n"
-                            for title, href in refs:
-                                links_message += f"{title}: {href}\n"
-                            full_message += links_message
+                        if current_message or refs:
+                            full_message = current_message or ""
+                            if refs:
+                                links_message = "\n相关链接:\n"
+                                for title, href in refs:
+                                    links_message += f"{title}: {href}\n"
+                                full_message += links_message
 
-                        # Split message if it exceeds 4000 characters
-                        while len(full_message) > 4000:
-                            # Send first 4000 chars and update remaining message
-                            await update.message.reply_text(full_message[:4000])
-                            full_message = full_message[4000:].lstrip()
+                            # Split message if it exceeds 4000 characters
+                            while len(full_message) > 4000:
+                                # Send first 4000 chars and update remaining message
+                                await update.message.reply_text(full_message[:4000])
+                                full_message = full_message[4000:].lstrip()
 
-                        # Send remaining message if any
-                        if full_message:
-                            # logging.info("sending message", len(full_message))
-                            await update.message.reply_text(full_message)
-            except Exception as e:
-                logging.exception("something wrong")
-                await update.message.reply_text("something wrong with client stream" + str(e) + str(type(e)))
-            # f.close()
+                            # Send remaining message if any
+                            if full_message:
+                                # logging.info("sending message", len(full_message))
+                                await update.message.reply_text(full_message)
+                except Exception as e:
+                    logging.exception("something wrong")
+                    await update.message.reply_text("something wrong with client stream" + str(e) + str(type(e)))
+                # f.close()
+            break
 
 
 async def handle_mars(update: Update, context: ContextTypes.DEFAULT_TYPE):
