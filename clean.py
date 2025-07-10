@@ -8,6 +8,11 @@ def clean_html(html_text):
 
     # 使用BeautifulSoup清理
     soup = BeautifulSoup(text, 'html.parser')
+    
+    # 移除不可见的div元素
+    for div in soup.find_all('div', style=lambda x: x and 'display: none' in x):
+        div.decompose()
+    
     text = soup.get_text(separator='\n', strip=True)
 
     # 移除多余空白
